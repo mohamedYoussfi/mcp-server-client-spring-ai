@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #e9ecef;
+            color: #333;
+            margin-right: auto;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 10px;
+            font-style: italic;
+            color: #6c757d;
+        }
+        .message-input {
+            resize: none;
+        }
+        .message pre {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+        .message code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .message pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .message blockquote {
+            border-left: 4px solid #007bff;
+            margin: 8px 0;
+            padding-left: 12px;
+            color: #6c757d;
+        }
+        .message ul, .message ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        .message h1, .message h2, .message h3, .message h4, .message h5, .message h6 {
+            margin: 12px 0 8px 0;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-robot"></i>
+                            AI Chat Assistant
+                        </h4>
+                    </div>
+                    
+                    <div class="card-body p-0">
+                        <div id="chatContainer" class="chat-container p-3">
+                            <div class="message ai-message">
+                                <strong>AI:</strong> Hello! I'm your AI assistant. How can I help you today?
+                            </div>
+                        </div>
+                        
+                        <div id="typingIndicator" class="typing-indicator">
+                            <i class="bi bi-three-dots"></i> AI is typing...
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <form id="chatForm" class="d-flex gap-2">
+                            <textarea 
+                                id="messageInput" 
+                                class="form-control message-input" 
+                                rows="2" 
+                                placeholder="Type your message here..." 
+                                required></textarea>
+                            <button type="submit" class="btn btn-primary" id="sendButton">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </form>
+                        <small class="text-muted">Press Shift+Enter for new line, Enter to send</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const chatForm = document.getElementById('chatForm');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `<strong>You:</strong> ${content}`;
+            } else {
+                const parsedContent = marked.parse(content);
+                messageDiv.innerHTML = `<strong>AI:</strong> ${parsedContent}`;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function setLoading(loading) {
+            sendButton.disabled = loading;
+            sendButton.innerHTML = loading ? 
+                '<i class="bi bi-hourglass-split"></i>' : 
+                '<i class="bi bi-send"></i>';
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+            setLoading(true);
+            showTyping();
+
+            try {
+                const formData = new FormData();
+                formData.append('message', message);
+
+                const response = await fetch('/chat/send', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const aiResponse = await response.text();
+                hideTyping();
+                addMessage(aiResponse);
+            } catch (error) {
+                hideTyping();
+                addMessage('Sorry, there was an error processing your request. Please try again.');
+                console.error('Error:', error);
+            } finally {
+                setLoading(false);
+                messageInput.focus();
+            }
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        messageInput.focus();
+    </script>
+</body>
+</html>

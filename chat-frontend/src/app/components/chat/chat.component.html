@@ -1,0 +1,52 @@
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-robot"></i>
+            AI Chat Assistant
+          </h4>
+        </div>
+        
+        <div class="card-body p-0">
+          <div class="chat-container p-3" #chatContainer>
+            <div 
+              *ngFor="let message of messages" 
+              class="message"
+              [ngClass]="message.isUser ? 'user-message' : 'ai-message'">
+              <strong>{{ message.isUser ? 'You' : 'AI' }}:</strong>
+              <span *ngIf="message.isUser">{{ message.content }}</span>
+              <div *ngIf="!message.isUser" [innerHTML]="parseMarkdown(message.content)"></div>
+            </div>
+          </div>
+          
+          <div *ngIf="isTyping" class="typing-indicator">
+            <i class="bi bi-three-dots"></i> AI is typing...
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <form (ngSubmit)="sendMessage()" class="d-flex gap-2">
+            <textarea 
+              [(ngModel)]="newMessage"
+              name="messageInput"
+              class="form-control message-input" 
+              rows="2" 
+              placeholder="Type your message here..." 
+              (keydown)="onKeyDown($event)"
+              [disabled]="isLoading"
+              required></textarea>
+            <button 
+              type="submit" 
+              class="btn btn-primary" 
+              [disabled]="isLoading || !newMessage.trim()">
+              <i class="bi" [ngClass]="isLoading ? 'bi-hourglass-split' : 'bi-send'"></i>
+            </button>
+          </form>
+          <small class="text-muted">Press Shift+Enter for new line, Enter to send</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
