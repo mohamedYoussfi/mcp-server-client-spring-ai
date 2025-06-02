@@ -7,6 +7,17 @@
         "@modelcontextprotocol/server-filesystem",
         "/Users/mohamedyoussfi/dp/mcp-server-client-spring"
       ]
+    },
+    "Python-MCP-Server": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp[cli]",
+        "mcp",
+        "run",
+        "/Users/mohamedyoussfi/dp/mcp-server-client-spring/python-mcp-server/server.py"
+      ]
     }
   }
 }
